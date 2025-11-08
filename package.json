@@ -1,10 +1,15 @@
 {
   "name": "deepseek-vk-widget",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "start": "vercel dev"
+    "dev": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
