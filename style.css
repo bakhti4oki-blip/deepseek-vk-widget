@@ -1,0 +1,11 @@
+body { font-family: Arial, sans-serif; margin:0; background:#f5f7fa; }
+#app { max-width:720px; margin:10px auto; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); overflow:hidden; display:flex; flex-direction:column; height:90vh; }
+header { padding:16px; border-bottom:1px solid #eee; }
+header h1{ margin:0; font-size:18px; }
+main#messages { padding:16px; flex:1; overflow:auto; }
+.message { margin-bottom:12px; padding:10px 12px; border-radius:10px; max-width:80%; word-break:break-word; }
+.user { background:#dcf8c6; margin-left:auto; text-align:right; }
+.bot { background:#f1f1f1; margin-right:auto; }
+form { display:flex; padding:10px; border-top:1px solid #eee; }
+#input { flex:1; padding:10px; border-radius:6px; border:1px solid #ddd; margin-right:8px; }
+button { padding:10px 14px; border-radius:6px; border:none; background:#2d8cff; color:#fff; }
