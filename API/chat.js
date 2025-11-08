@@ -1,55 +1,65 @@
-export default async function handler(request, response) {
+export default async function handler(req, res) {
   // Устанавливаем CORS headers
-  response.setHeader('Access-Control-Allow-Origin', '*');
-  response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   // Handle preflight request
-  if (request.method === 'OPTIONS') {
-    return response.status(200).end();
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
   }
 
   // Only allow POST requests
-  if (request.method !== 'POST') {
-    return response.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Parse the request body
-    const body = await parseBody(request);
+    // Parse JSON body
+    let body;
+    if (typeof req.body === 'string') {
+      body = JSON.parse(req.body);
+    } else {
+      body = req.body;
+    }
+
     const { message } = body;
 
-    if (!message) {
-      return response.status(400).json({ error: 'Message is required' });
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Improved response logic
-    let reply;
-    const userMessage = message.toLowerCase().trim();
+    console.log('Received message:', message);
 
+    // Improved AI responses
+    const userMessage = message.toLowerCase();
+    
+    let reply;
     if (userMessage.includes('привет') || userMessage.includes('hello') || userMessage.includes('hi')) {
       reply = "🤖 Привет! Я DeepSeek AI ассистент. Рад вас видеть! Чем могу помочь?";
-    } else if (userMessage.includes('как дела') || userMessage.includes('как ты')) {
-      reply = "🤖 У меня всё отлично! Я готов помогать вам с вопросами и задачами.";
-    } else if (userMessage.includes('спасибо') || userMessage.includes('благодар')) {
+    } else if (userMessage.includes('как дела') || userMessage.includes('how are you')) {
+      reply = "🤖 У меня всё отлично! Готов помогать вам с вопросами и задачами.";
+    } else if (userMessage.includes('спасибо') || userMessage.includes('thanks')) {
       reply = "🤖 Пожалуйста! Всегда рад помочь. Обращайтесь ещё!";
     } else if (userMessage.includes('помощь') || userMessage.includes('help')) {
-      reply = "🤖 Я AI-ассистент DeepSeek. Могу ответить на ваши вопросы, помочь с информацией или просто пообщаться!";
+      reply = "🤖 Я AI-ассистент DeepSeek. Могу ответить на вопросы, помочь с информацией или просто пообщаться!";
+    } else if (userMessage.includes('что ты умеешь') || userMessage.includes('what can you do')) {
+      reply = "🤖 Я могу: отвечать на вопросы, помогать с информацией, поддерживать беседу, и многое другое!";
     } else {
-      const randomReplies = [
-        `Интересный вопрос! По теме "${message}" я могу сказать, что это требует внимательного изучения.`,
+      const responses = [
+        `Интересный вопрос! "${message}" - хорошая тема для обсуждения.`,
         `Спасибо за ваш запрос о "${message}". Как AI-ассистент, я постоянно учусь и улучшаю свои ответы.`,
-        `По вопросу "${message}" могу отметить, что это важная тема для обсуждения.`,
-        `Запрос "${message}" получен. В будущем я смогу давать более точные ответы на такие вопросы!`,
+        `По вопросу "${message}" могу сказать, что это требует внимательного изучения.`,
+        `Запрос "${message}" получен. Я обрабатываю информацию и стараюсь дать полезный ответ!`,
         `Отличный вопрос! "${message}" - это то, что действительно стоит обсудить.`
       ];
-      reply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+      reply = responses[Math.floor(Math.random() * responses.length)];
     }
 
-    // Simulate AI processing time
+    // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    return response.status(200).json({
+    return res.status(200).json({
       reply: reply,
       success: true,
       timestamp: new Date().toISOString()
@@ -57,27 +67,9 @@ export default async function handler(request, response) {
 
   } catch (error) {
     console.error('API Error:', error);
-    return response.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error',
       message: 'Please try again later'
     });
   }
-}
-
-// Helper function to parse request body
-function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', () => {
-      try {
-        resolve(JSON.parse(body));
-      } catch (e) {
-        reject(new Error('Invalid JSON'));
-      }
-    });
-    req.on('error', reject);
-  });
 }
