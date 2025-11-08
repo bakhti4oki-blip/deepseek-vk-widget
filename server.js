@@ -3,19 +3,17 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
+// Для реального DeepSeek API
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'your-deepseek-api-key-here';
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
 
-  // CORS headers для VK
+  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-  // Важные заголовки для VK
-  res.setHeader('X-Frame-Options', 'ALLOW-FROM https://vk.com');
-  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://vk.com https://*.vk.com");
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -43,51 +41,66 @@ const server = http.createServer(async (req, res) => {
 
         console.log('Received message:', message);
 
-        // AI responses
-        const userMessage = message.toLowerCase();
+        // Реальный DeepSeek API
         let reply;
+        if (DEEPSEEK_API_KEY && DEEPSEEK_API_KEY !== 'your-deepseek-api-key-here') {
+          try {
+            const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: [
+                  {
+                    role: 'system',
+                    content: 'Ты полезный AI-ассистент для сообщества ВКонтакте о вахтовой работе в Уфе и Башкирии. Отвечай кратко и по делу.'
+                  },
+                  {
+                    role: 'user',
+                    content: message
+                  }
+                ],
+                max_tokens: 500,
+                temperature: 0.7
+              })
+            });
 
-        if (userMessage.includes('привет') || userMessage.includes('hello') || userMessage.includes('hi')) {
-          reply = "🤖 Привет! Я DeepSeek AI ассистент для сообщества ВКонтакте!";
-        } else if (userMessage.includes('как дела') || userMessage.includes('how are you')) {
-          reply = "🤖 У меня всё отлично! Готов помогать участникам сообщества.";
-        } else if (userMessage.includes('спасибо') || userMessage.includes('thanks')) {
-          reply = "🤖 Всегда пожалуйста! Обращайтесь ещё!";
-        } else if (userMessage.includes('помощь') || userMessage.includes('help')) {
-          reply = "🤖 Я AI-ассистент DeepSeek. Могу отвечать на вопросы, помогать с информацией и поддерживать беседу в вашем сообществе ВК!";
-        } else if (userMessage.includes('вахт') || userMessage.includes('работ') || userMessage.includes('уфа')) {
-          reply = "🤖 Я специализируюсь на помощи с вопросами о вахтовой работе в Уфе и Башкирии. Чем могу помочь?";
+            if (deepseekResponse.ok) {
+              const result = await deepseekResponse.json();
+              reply = result.choices[0]?.message?.content || 'Не удалось получить ответ от DeepSeek';
+            } else {
+              throw new Error('DeepSeek API error');
+            }
+          } catch (apiError) {
+            console.error('DeepSeek API error:', apiError);
+            // Fallback to local responses
+            reply = getLocalResponse(message);
+          }
         } else {
-          const replies = [
-            `Интересный вопрос о "${message}". Как AI-ассистент, я постоянно учусь и развиваюсь!`,
-            `Спасибо за сообщение: "${message}". Стараюсь быть полезным для участников сообщества!`,
-            `По вопросу "${message}" могу сказать, что это требует внимательного изучения.`,
-            `Запрос "${message}" получен. Развиваюсь как AI-ассистент для лучшей помощи!`,
-            `Отличный вопрос! "${message}" - хорошая тема для обсуждения в сообществе.`
-          ];
-          reply = replies[Math.floor(Math.random() * replies.length)];
+          // Локальные ответы если API ключ не настроен
+          reply = getLocalResponse(message);
         }
 
-        // Simulate processing
-        await new Promise(resolve => setTimeout(resolve, 600));
-
         res.writeHead(200, { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
         });
         res.end(JSON.stringify({
           reply: reply,
-          success: true,
-          timestamp: new Date().toISOString()
+          success: true
         }));
 
       } catch (error) {
         console.error('Error:', error);
         res.writeHead(500, { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
         });
-        res.end(JSON.stringify({ error: 'Internal server error' }));
+        res.end(JSON.stringify({ 
+          error: 'Internal server error',
+          message: 'Попробуйте еще раз'
+        }));
       }
     });
     return;
@@ -114,8 +127,7 @@ const server = http.createServer(async (req, res) => {
             res.end('Not Found');
           } else {
             res.writeHead(200, { 
-              'Content-Type': 'text/html; charset=utf-8',
-              'Access-Control-Allow-Origin': '*'
+              'Content-Type': 'text/html; charset=utf-8'
             });
             res.end(data);
           }
@@ -132,23 +144,40 @@ const server = http.createServer(async (req, res) => {
     const contentTypes = {
       '.html': 'text/html; charset=utf-8',
       '.css': 'text/css; charset=utf-8',
-      '.js': 'application/javascript; charset=utf-8',
-      '.json': 'application/json',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.ico': 'image/x-icon'
+      '.js': 'application/javascript; charset=utf-8'
     };
 
     res.writeHead(200, {
-      'Content-Type': contentTypes[ext] || 'text/plain',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': contentTypes[ext] || 'text/plain'
     });
     res.end(data);
   });
 });
 
+// Локальные ответы для fallback
+function getLocalResponse(message) {
+  const userMessage = message.toLowerCase();
+  
+  if (userMessage.includes('привет') || userMessage.includes('hello')) {
+    return "Привет! Я DeepSeek AI ассистент. Чем могу помочь с вопросами о вахтовой работе?";
+  } else if (userMessage.includes('вахт') || userMessage.includes('работ')) {
+    return "По вопросам вахтовой работы в Уфе и Башкирии могу помочь с информацией о вакансиях, условиях труда и требованиях к соискателям.";
+  } else if (userMessage.includes('условия') || userMessage.includes('зарплат')) {
+    return "Условия вахтовой работы обычно включают: проживание, питание, транспортные расходы. Зарплата зависит от специальности и опыта.";
+  } else if (userMessage.includes('требован')) {
+    return "Основные требования: опыт работы, необходимые квалификации, медицинская книжка, готовность к работе вахтовым методом.";
+  } else {
+    const replies = [
+      `По вопросу "${message}" могу сказать, что это связано с вахтовой работой. Уточните, пожалуйста, что именно вас интересует.`,
+      `Интересующий вас вопрос "${message}" требует уточнения деталей о вахтовой работе в Уфе.`,
+      `В рамках вахтовой работы в Башкирии вопрос "${message}" является актуальным. Нужны дополнительные детали.`
+    ];
+    return replies[Math.floor(Math.random() * replies.length)];
+  }
+}
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Open http://localhost:${PORT} to view the app`);
+  console.log(`DeepSeek API Key: ${DEEPSEEK_API_KEY ? 'Configured' : 'Not configured'}`);
 });
