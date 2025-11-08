@@ -1,66 +1,55 @@
-export default async function handler(req, res) {
-  // Настраиваем CORS для ВКонтакте
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+export default async function handler(request, response) {
+  // Устанавливаем CORS headers
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Обрабатываем preflight запрос
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  // Handle preflight request
+  if (request.method === 'OPTIONS') {
+    return response.status(200).end();
   }
 
-  // Только POST запросы
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  // Only allow POST requests
+  if (request.method !== 'POST') {
+    return response.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Правильно парсим тело запроса для Vercel
-    let body;
-    if (typeof req.body === 'string') {
-      body = JSON.parse(req.body);
-    } else if (req.body) {
-      body = req.body;
-    } else {
-      // Для Vercel Serverless Functions
-      const chunks = [];
-      for await (const chunk of req) {
-        chunks.push(chunk);
-      }
-      const rawBody = Buffer.concat(chunks).toString();
-      body = JSON.parse(rawBody);
-    }
-
+    // Parse the request body
+    const body = await parseBody(request);
     const { message } = body;
 
     if (!message) {
-      return res.status(400).json({ error: 'Сообщение обязательно' });
+      return response.status(400).json({ error: 'Message is required' });
     }
 
-    // Улучшенная заглушка с разными типами ответов
-    const greetings = ['привет', 'здравствуй', 'добрый', 'hello', 'hi', 'начать'];
-    const isGreeting = greetings.some(greet => message.toLowerCase().includes(greet));
-
+    // Improved response logic
     let reply;
-    if (isGreeting) {
-      reply = "🤖 Привет! Я DeepSeek AI ассистент. Задавайте вопросы, и я постараюсь помочь!";
-    } else if (message.length < 3) {
-      reply = "🤖 Пожалуйста, напишите более развернутый вопрос.";
+    const userMessage = message.toLowerCase().trim();
+
+    if (userMessage.includes('привет') || userMessage.includes('hello') || userMessage.includes('hi')) {
+      reply = "🤖 Привет! Я DeepSeek AI ассистент. Рад вас видеть! Чем могу помочь?";
+    } else if (userMessage.includes('как дела') || userMessage.includes('как ты')) {
+      reply = "🤖 У меня всё отлично! Я готов помогать вам с вопросами и задачами.";
+    } else if (userMessage.includes('спасибо') || userMessage.includes('благодар')) {
+      reply = "🤖 Пожалуйста! Всегда рад помочь. Обращайтесь ещё!";
+    } else if (userMessage.includes('помощь') || userMessage.includes('help')) {
+      reply = "🤖 Я AI-ассистент DeepSeek. Могу ответить на ваши вопросы, помочь с информацией или просто пообщаться!";
     } else {
-      const replies = [
-        `Интересный вопрос о "${message}". В настоящее время я настраиваю интеграцию с DeepSeek API.`,
-        `Спасибо за ваш запрос! "${message}" - это важная тема. Скоро я буду полностью функционален.`,
-        `По вопросу "${message}" могу сказать, что как AI-ассистент я еще обучаюсь. Возвращайтесь позже!`,
-        `Запрос "${message}" получен. В ближайшее время я буду обрабатывать такие вопросы с помощью DeepSeek AI.`,
-        `Отличный вопрос! По теме "${message}" скоро смогу давать более точные ответы.`
+      const randomReplies = [
+        `Интересный вопрос! По теме "${message}" я могу сказать, что это требует внимательного изучения.`,
+        `Спасибо за ваш запрос о "${message}". Как AI-ассистент, я постоянно учусь и улучшаю свои ответы.`,
+        `По вопросу "${message}" могу отметить, что это важная тема для обсуждения.`,
+        `Запрос "${message}" получен. В будущем я смогу давать более точные ответы на такие вопросы!`,
+        `Отличный вопрос! "${message}" - это то, что действительно стоит обсудить.`
       ];
-      reply = "🤖 " + replies[Math.floor(Math.random() * replies.length)];
+      reply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
     }
 
-    // Имитация обработки AI
-    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+    // Simulate AI processing time
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-    return res.status(200).json({ 
+    return response.status(200).json({
       reply: reply,
       success: true,
       timestamp: new Date().toISOString()
@@ -68,9 +57,27 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('API Error:', error);
-    return res.status(500).json({ 
-      error: 'Внутренняя ошибка сервера',
-      message: 'Попробуйте еще раз через несколько секунд'
+    return response.status(500).json({
+      error: 'Internal server error',
+      message: 'Please try again later'
     });
   }
+}
+
+// Helper function to parse request body
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch (e) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
 }
