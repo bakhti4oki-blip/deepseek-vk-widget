@@ -1,8 +1,4 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -12,6 +8,10 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
     const { message } = req.body;
 
@@ -19,37 +19,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Сообщение обязательно' });
     }
 
-    // Интеграция с DeepSeek API
-    const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`DeepSeek API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const reply = data.choices[0]?.message?.content || 'Извините, не удалось получить ответ';
+    // Временная заглушка пока нет лицензии DeepSeek
+    const replies = [
+      "Привет! Я DeepSeek AI ассистент. В настоящее время настраиваюсь для работы с сообществом.",
+      "Спасибо за ваше сообщение! Скоро я буду полностью функционален.",
+      "ИИ-ассистент в процессе настройки. Возвращайтесь позже!",
+      "Рад общению! В данный момент прохожу финальные настройки."
+    ];
+    
+    const randomReply = replies[Math.floor(Math.random() * replies.length)];
+    const reply = `🤖 ${randomReply}\n\n(Ваше сообщение: "${message}")`;
 
     return res.status(200).json({ reply });
 
   } catch (error) {
     console.error('Ошибка:', error);
-    return res.status(500).json({ error: 'Ошибка сервера: ' + error.message });
+    return res.status(500).json({ error: 'Ошибка сервера' });
   }
 }
