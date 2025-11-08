@@ -10,6 +10,9 @@ function addMessage(text, cls = 'bot') {
   messages.scrollTop = messages.scrollHeight;
 }
 
+// Добавляем приветственное сообщение
+addMessage('🤖 Привет! Я DeepSeek AI ассистент. Чем могу помочь?', 'bot');
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = input.value.trim();
