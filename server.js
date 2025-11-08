@@ -4,7 +4,7 @@ const path = require('path');
 const url = require('url');
 
 // Для реального DeepSeek API
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'your-deepseek-api-key-here';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
@@ -33,7 +33,7 @@ const server = http.createServer(async (req, res) => {
         const data = JSON.parse(body);
         const { message } = data;
 
-        if (!message) {
+        if (!message || typeof message !== 'string') {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Message is required' }));
           return;
@@ -41,11 +41,12 @@ const server = http.createServer(async (req, res) => {
 
         console.log('Received message:', message);
 
-        // Реальный DeepSeek API
         let reply;
-        if (DEEPSEEK_API_KEY && DEEPSEEK_API_KEY !== 'your-deepseek-api-key-here') {
+        
+        // Используем реальный DeepSeek API если ключ есть
+        if (DEEPSEEK_API_KEY) {
           try {
-            const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
@@ -56,7 +57,7 @@ const server = http.createServer(async (req, res) => {
                 messages: [
                   {
                     role: 'system',
-                    content: 'Ты полезный AI-ассистент для сообщества ВКонтакте о вахтовой работе в Уфе и Башкирии. Отвечай кратко и по делу.'
+                    content: 'Ты полезный AI-ассистент для сообщества ВКонтакте о вахтовой работе в Уфе и Башкирии. Отвечай кратко и по делу на русском языке.'
                   },
                   {
                     role: 'user',
@@ -68,15 +69,15 @@ const server = http.createServer(async (req, res) => {
               })
             });
 
-            if (deepseekResponse.ok) {
-              const result = await deepseekResponse.json();
+            if (response.ok) {
+              const result = await response.json();
               reply = result.choices[0]?.message?.content || 'Не удалось получить ответ от DeepSeek';
             } else {
-              throw new Error('DeepSeek API error');
+              console.error('DeepSeek API error:', response.status);
+              reply = getLocalResponse(message);
             }
           } catch (apiError) {
-            console.error('DeepSeek API error:', apiError);
-            // Fallback to local responses
+            console.error('DeepSeek API request failed:', apiError);
             reply = getLocalResponse(message);
           }
         } else {
@@ -93,13 +94,12 @@ const server = http.createServer(async (req, res) => {
         }));
 
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Server error:', error);
         res.writeHead(500, { 
           'Content-Type': 'application/json'
         });
         res.end(JSON.stringify({ 
-          error: 'Internal server error',
-          message: 'Попробуйте еще раз'
+          error: 'Internal server error'
         }));
       }
     });
@@ -144,7 +144,8 @@ const server = http.createServer(async (req, res) => {
     const contentTypes = {
       '.html': 'text/html; charset=utf-8',
       '.css': 'text/css; charset=utf-8',
-      '.js': 'application/javascript; charset=utf-8'
+      '.js': 'application/javascript; charset=utf-8',
+      '.ico': 'image/x-icon'
     };
 
     res.writeHead(200, {
@@ -158,19 +159,21 @@ const server = http.createServer(async (req, res) => {
 function getLocalResponse(message) {
   const userMessage = message.toLowerCase();
   
-  if (userMessage.includes('привет') || userMessage.includes('hello')) {
-    return "Привет! Я DeepSeek AI ассистент. Чем могу помочь с вопросами о вахтовой работе?";
+  if (userMessage.includes('привет') || userMessage.includes('hello') || userMessage.includes('hi')) {
+    return "Привет! Я DeepSeek AI ассистент. Чем могу помочь с вопросами о вахтовой работе в Уфе и Башкирии?";
   } else if (userMessage.includes('вахт') || userMessage.includes('работ')) {
-    return "По вопросам вахтовой работы в Уфе и Башкирии могу помочь с информацией о вакансиях, условиях труда и требованиях к соискателям.";
+    return "По вопросам вахтовой работы могу помочь с информацией о вакансиях, условиях труда и требованиях к соискателям в Уфе и Башкирии.";
   } else if (userMessage.includes('условия') || userMessage.includes('зарплат')) {
-    return "Условия вахтовой работы обычно включают: проживание, питание, транспортные расходы. Зарплата зависит от специальности и опыта.";
+    return "Условия вахтовой работы обычно включают: проживание, питание, транспорт. Зарплата зависит от специальности, опыта и компании.";
   } else if (userMessage.includes('требован')) {
-    return "Основные требования: опыт работы, необходимые квалификации, медицинская книжка, готовность к работе вахтовым методом.";
+    return "Основные требования: опыт работы, квалификация, медицинская книжка, готовность к работе вахтовым методом.";
+  } else if (userMessage.includes('уфа') || userMessage.includes('башкир')) {
+    return "В Уфе и Башкирии много вахтовых вакансий в сферах: строительство, нефтегазовая отрасль, производство.";
   } else {
     const replies = [
-      `По вопросу "${message}" могу сказать, что это связано с вахтовой работой. Уточните, пожалуйста, что именно вас интересует.`,
-      `Интересующий вас вопрос "${message}" требует уточнения деталей о вахтовой работе в Уфе.`,
-      `В рамках вахтовой работы в Башкирии вопрос "${message}" является актуальным. Нужны дополнительные детали.`
+      `Спасибо за ваш вопрос о "${message}". Как AI-ассистент, я специализируюсь на помощи с вахтовой работой в Уфе.`,
+      `Интересный вопрос! "${message}" - это важно для обсуждения в контексте вахтовой работы.`,
+      `По теме "${message}" могу сказать, что это связано с вопросами трудоустройства и условий работы.`
     ];
     return replies[Math.floor(Math.random() * replies.length)];
   }
@@ -179,5 +182,9 @@ function getLocalResponse(message) {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`DeepSeek API Key: ${DEEPSEEK_API_KEY ? 'Configured' : 'Not configured'}`);
+  if (DEEPSEEK_API_KEY) {
+    console.log('DeepSeek API: Configured');
+  } else {
+    console.log('DeepSeek API: Using local responses (no API key)');
+  }
 });
