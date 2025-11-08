@@ -1,58 +1,83 @@
-const form = document.getElementById('form');
-const input = document.getElementById('input');
-const messages = document.getElementById('messages');
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
 
-function addMessage(text, cls = 'bot') {
-    const el = document.createElement('div');
-    el.className = 'message ' + cls;
-    el.textContent = text;
-    messages.appendChild(el);
-    messages.scrollTop = messages.scrollHeight;
-}
-
-// Добавляем приветственное сообщение
-addMessage('🤖 Привет! Я DeepSeek AI ассистент. Чем могу помочь?', 'bot');
-
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const text = input.value.trim();
-    if (!text) return;
-
-    // Добавляем сообщение пользователя
-    addMessage(text, 'user');
-    input.value = '';
-
-    // Показываем индикатор загрузки
-    const loading = document.createElement('div');
-    loading.className = 'message bot loading';
-    loading.textContent = 'DeepSeek думает...';
-    messages.appendChild(loading);
-    messages.scrollTop = messages.scrollHeight;
-
-    try {
-        const resp = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text })
-        });
-
-        // Убираем индикатор загрузки
-        loading.remove();
-
-        if (resp.ok) {
-            const data = await resp.json();
-            addMessage(data.reply, 'bot');
-        } else {
-            const errorData = await resp.json();
-            addMessage(`Ошибка: ${errorData.error || 'Неизвестная ошибка'}`, 'bot');
-        }
-    } catch (err) {
-        loading.remove();
-        addMessage('Ошибка сети: ' + err.message, 'bot');
+    // Функция добавления сообщения
+    function addMessage(text, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = isUser ? 'message user' : 'message bot';
+        messageDiv.textContent = text;
+        messages.appendChild(messageDiv);
+        messages.scrollTop = messages.scrollHeight;
     }
-});
 
-// Фокус на input при загрузке
-window.addEventListener('load', () => {
+    // Приветственное сообщение
+    addMessage('🤖 Привет! Я DeepSeek AI ассистент. Чем могу помочь?');
+
+    // Обработчик формы
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const userMessage = input.value.trim();
+        if (!userMessage) return;
+
+        // Добавляем сообщение пользователя
+        addMessage(userMessage, true);
+        input.value = '';
+        input.disabled = true;
+
+        // Индикатор загрузки
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message bot loading';
+        loadingDiv.textContent = 'DeepSeek думает...';
+        loadingDiv.id = 'loading-message';
+        messages.appendChild(loadingDiv);
+        messages.scrollTop = messages.scrollHeight;
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            // Убираем индикатор загрузки
+            const loadingElement = document.getElementById('loading-message');
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.reply) {
+                addMessage(data.reply);
+            } else {
+                addMessage('🤖 Извините, не удалось обработать запрос');
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            
+            // Убираем индикатор загрузки
+            const loadingElement = document.getElementById('loading-message');
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+            
+            addMessage('🤖 Ошибка соединения. Попробуйте еще раз.');
+        } finally {
+            input.disabled = false;
+            input.focus();
+        }
+    });
+
+    // Фокус на поле ввода
     input.focus();
 });
