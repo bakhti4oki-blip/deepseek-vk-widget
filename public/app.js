@@ -2,7 +2,7 @@ const form = document.getElementById('form');
 const input = document.getElementById('input');
 const messages = document.getElementById('messages');
 
-function addMessage(text, cls='bot') {
+function addMessage(text, cls = 'bot') {
   const el = document.createElement('div');
   el.className = 'message ' + cls;
   el.textContent = text;
@@ -14,11 +14,15 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const text = input.value.trim();
   if (!text) return;
+
+  // Добавляем сообщение пользователя
   addMessage(text, 'user');
   input.value = '';
+
+  // Показываем индикатор загрузки
   const loading = document.createElement('div');
-  loading.className = 'message bot';
-  loading.textContent = '...';
+  loading.className = 'message bot loading';
+  loading.textContent = 'DeepSeek думает...';
   messages.appendChild(loading);
   messages.scrollTop = messages.scrollHeight;
 
@@ -28,15 +32,24 @@ form.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text })
     });
-    const data = await resp.json();
-    if (loading && loading.parentNode) loading.remove();
+
+    // Убираем индикатор загрузки
+    loading.remove();
+
     if (resp.ok) {
-      addMessage(data.reply || 'Пустой ответ от сервера', 'bot');
+      const data = await resp.json();
+      addMessage(data.reply, 'bot');
     } else {
-      addMessage('Ошибка: ' + (data.error || resp.statusText), 'bot');
+      const errorData = await resp.json();
+      addMessage(`Ошибка: ${errorData.error || 'Неизвестная ошибка'}`, 'bot');
     }
   } catch (err) {
-    if (loading && loading.parentNode) loading.remove();
+    loading.remove();
     addMessage('Ошибка сети: ' + err.message, 'bot');
   }
+});
+
+// Фокус на input при загрузке
+window.addEventListener('load', () => {
+  input.focus();
 });
