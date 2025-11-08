@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Функция для отправки сообщения на сервер
     async function sendMessageToServer(userMessage) {
         try {
-            console.log('Sending message to server...');
+            console.log('Отправка сообщения на сервер:', userMessage);
             
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -30,24 +30,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
 
-            console.log('Response status:', response.status);
+            console.log('Статус ответа:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('Response data:', data);
+            console.log('Данные ответа:', data);
             
             return data.reply || '🤖 Извините, не удалось обработать запрос';
 
         } catch (error) {
-            console.error('Network error:', error);
+            console.error('Ошибка сети:', error);
             
             if (error.message.includes('Failed to fetch')) {
                 throw new Error('Не удалось соединиться с сервером. Проверьте подключение к интернету.');
             } else if (error.message.includes('HTTP 404')) {
-                throw new Error('Сервер временно недоступен. Попробуйте позже.');
+                throw new Error('Сервер временно недоступен. Пожалуйста, попробуйте позже.');
             } else if (error.message.includes('HTTP 5')) {
                 throw new Error('Временные проблемы с сервером. Попробуйте через минуту.');
             } else {
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addMessage(reply);
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Ошибка:', error);
             
             // Убираем индикатор загрузки
             const loadingElement = document.getElementById('loading-message');
