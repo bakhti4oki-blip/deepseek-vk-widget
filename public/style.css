@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -12,6 +13,7 @@ body {
     justify-content: center;
     align-items: center;
     color: white;
+    touch-action: pan-y;
 }
 
 #app {
@@ -27,7 +29,7 @@ body {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Для мобильных VK */
+/* Для VK и мобильных устройств */
 @media (max-width: 768px) {
     body {
         background: #1e293b;
@@ -42,35 +44,63 @@ body {
     }
 }
 
+/* Для очень маленьких экранов */
+@media (max-width: 320px) {
+    #messages {
+        padding: 12px;
+    }
+    
+    .message {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    #form {
+        padding: 12px;
+    }
+    
+    #input {
+        padding: 10px 14px;
+    }
+    
+    button {
+        padding: 10px 16px;
+        min-width: 70px;
+    }
+}
+
 header {
     background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
-    padding: 20px;
+    padding: 16px 20px;
     text-align: center;
     border-bottom: 1px solid #334155;
+    flex-shrink: 0;
 }
 
 header h1 {
     font-size: 18px;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-weight: 600;
 }
 
 header p {
     font-size: 12px;
     color: #cbd5e1;
+    opacity: 0.9;
 }
 
 #messages {
     flex: 1;
-    padding: 20px;
+    padding: 16px;
     overflow-y: auto;
     background: #0f172a;
+    -webkit-overflow-scrolling: touch;
 }
 
 .message {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     padding: 12px 16px;
-    border-radius: 18px;
+    border-radius: 16px;
     max-width: 85%;
     word-wrap: break-word;
     line-height: 1.4;
@@ -79,14 +109,14 @@ header p {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .message.bot {
     background: #334155;
     color: #e2e8f0;
-    border-bottom-left-radius: 5px;
+    border-bottom-left-radius: 4px;
     margin-right: auto;
     border: 1px solid #475569;
 }
@@ -95,8 +125,7 @@ header p {
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
     color: white;
     margin-left: auto;
-    border-bottom-right-radius: 5px;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    border-bottom-right-radius: 4px;
 }
 
 .message.loading {
@@ -111,6 +140,7 @@ header p {
     background: #1e293b;
     border-top: 1px solid #334155;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 #input {
@@ -122,7 +152,8 @@ header p {
     font-size: 14px;
     background: #334155;
     color: white;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
 }
 
 #input::placeholder {
@@ -132,7 +163,6 @@ header p {
 #input:focus {
     border-color: #3b82f6;
     background: #475569;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 button {
@@ -144,17 +174,17 @@ button {
     cursor: pointer;
     font-weight: 600;
     font-size: 14px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     min-width: 80px;
+    -webkit-appearance: none;
 }
 
 button:hover {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    transform: translateY(-1px);
 }
 
 button:active {
-    transform: translateY(0);
+    transform: scale(0.98);
 }
 
 button:disabled {
@@ -163,9 +193,9 @@ button:disabled {
     transform: none;
 }
 
-/* Scrollbar */
+/* Scrollbar styling */
 #messages::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 
 #messages::-webkit-scrollbar-track {
@@ -174,9 +204,15 @@ button:disabled {
 
 #messages::-webkit-scrollbar-thumb {
     background: #3b82f6;
-    border-radius: 3px;
+    border-radius: 2px;
 }
 
 #messages::-webkit-scrollbar-thumb:hover {
     background: #2563eb;
+}
+
+/* Selection */
+::selection {
+    background: #3b82f6;
+    color: white;
 }
