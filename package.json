@@ -3,11 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js",
-    "build": "echo 'No build step needed'"
+    "start": "node server.js"
   },
-  "dependencies": {},
-  "engines": {
-    "node": ">=14"
-  }
+  "dependencies": {}
 }
