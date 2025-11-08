@@ -3,19 +3,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
-    // Определяем базовый URL для API
-    const getBaseUrl = () => {
-        return window.location.origin;
-    };
-
     // Функция добавления сообщения
     function addMessage(text, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = isUser ? 'message user' : 'message bot';
-        
-        const textNode = document.createTextNode(text);
-        messageDiv.appendChild(textNode);
-        
+        messageDiv.textContent = text;
         messages.appendChild(messageDiv);
         messages.scrollTop = messages.scrollHeight;
     }
@@ -26,7 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Функция для отправки сообщения на сервер
     async function sendMessageToServer(userMessage) {
         try {
-            const response = await fetch(getBaseUrl() + '/api/chat', {
+            console.log('Sending message to server...');
+            
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,16 +30,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
             });
 
+            console.log('Response status:', response.status);
+
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
+            console.log('Response data:', data);
             
             return data.reply || '🤖 Извините, не удалось обработать запрос';
 
@@ -54,8 +46,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (error.message.includes('Failed to fetch')) {
                 throw new Error('Не удалось соединиться с сервером. Проверьте подключение к интернету.');
+            } else if (error.message.includes('HTTP 404')) {
+                throw new Error('Сервер временно недоступен. Попробуйте позже.');
             } else if (error.message.includes('HTTP 5')) {
-                throw new Error('Временные проблемы с сервером. Попробуйте позже.');
+                throw new Error('Временные проблемы с сервером. Попробуйте через минуту.');
             } else {
                 throw new Error('Ошибка соединения: ' + error.message);
             }
@@ -73,7 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
         addMessage(userMessage, true);
         input.value = '';
         input.disabled = true;
-        form.querySelector('button').disabled = true;
 
         // Индикатор загрузки
         const loadingDiv = document.createElement('div');
@@ -106,32 +99,10 @@ document.addEventListener('DOMContentLoaded', function() {
             addMessage('❌ ' + error.message);
         } finally {
             input.disabled = false;
-            form.querySelector('button').disabled = false;
             input.focus();
         }
     });
 
-    // Адаптация под разные устройства
-    function adjustLayout() {
-        const app = document.getElementById('app');
-        const isMobile = window.innerWidth <= 768;
-        
-        if (isMobile) {
-            app.style.width = '100%';
-            app.style.height = '100vh';
-            app.style.borderRadius = '0';
-        } else {
-            app.style.width = '380px';
-            app.style.height = '600px';
-            app.style.borderRadius = '12px';
-        }
-    }
-
-    // Инициализация
-    window.addEventListener('load', function() {
-        adjustLayout();
-        input.focus();
-    });
-
-    window.addEventListener('resize', adjustLayout);
+    // Фокус на поле ввода при загрузке
+    input.focus();
 });
