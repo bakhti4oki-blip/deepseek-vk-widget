@@ -2,7 +2,12 @@
   "name": "deepseek-vk-widget",
   "version": "1.0.0",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'No build step needed'"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "engines": {
+    "node": ">=14"
+  }
 }
