@@ -1,12 +1,21 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const url = require('url');
 
 const server = http.createServer(async (req, res) => {
-  // CORS headers
+  const parsedUrl = url.parse(req.url, true);
+  const pathname = parsedUrl.pathname;
+
+  // CORS headers для VK
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  // Важные заголовки для VK
+  res.setHeader('X-Frame-Options', 'ALLOW-FROM https://vk.com');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'self' https://vk.com https://*.vk.com");
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -15,7 +24,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // API endpoint
-  if (req.url === '/api/chat' && req.method === 'POST') {
+  if (pathname === '/api/chat' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
@@ -38,29 +47,34 @@ const server = http.createServer(async (req, res) => {
         const userMessage = message.toLowerCase();
         let reply;
 
-        if (userMessage.includes('привет') || userMessage.includes('hello')) {
-          reply = "🤖 Привет! Я DeepSeek AI ассистент. Рад вас видеть!";
-        } else if (userMessage.includes('как дела')) {
-          reply = "🤖 У меня всё отлично! Готов помогать вам.";
-        } else if (userMessage.includes('спасибо')) {
-          reply = "🤖 Пожалуйста! Обращайтесь ещё!";
+        if (userMessage.includes('привет') || userMessage.includes('hello') || userMessage.includes('hi')) {
+          reply = "🤖 Привет! Я DeepSeek AI ассистент для сообщества ВКонтакте!";
+        } else if (userMessage.includes('как дела') || userMessage.includes('how are you')) {
+          reply = "🤖 У меня всё отлично! Готов помогать участникам сообщества.";
+        } else if (userMessage.includes('спасибо') || userMessage.includes('thanks')) {
+          reply = "🤖 Всегда пожалуйста! Обращайтесь ещё!";
         } else if (userMessage.includes('помощь') || userMessage.includes('help')) {
-          reply = "🤖 Я могу отвечать на вопросы, помогать с информацией и поддерживать беседу!";
+          reply = "🤖 Я AI-ассистент DeepSeek. Могу отвечать на вопросы, помогать с информацией и поддерживать беседу в вашем сообществе ВК!";
+        } else if (userMessage.includes('вахт') || userMessage.includes('работ') || userMessage.includes('уфа')) {
+          reply = "🤖 Я специализируюсь на помощи с вопросами о вахтовой работе в Уфе и Башкирии. Чем могу помочь?";
         } else {
           const replies = [
-            `Интересный вопрос: "${message}". Я AI-ассистент и постоянно учусь!`,
-            `Спасибо за сообщение: "${message}". Стараюсь быть полезным!`,
-            `По вопросу "${message}" могу сказать, что это требует изучения.`,
-            `Запрос "${message}" получен. Как AI-ассистент, я развиваюсь!`,
-            `Отличный вопрос! "${message}" - хорошая тема для обсуждения.`
+            `Интересный вопрос о "${message}". Как AI-ассистент, я постоянно учусь и развиваюсь!`,
+            `Спасибо за сообщение: "${message}". Стараюсь быть полезным для участников сообщества!`,
+            `По вопросу "${message}" могу сказать, что это требует внимательного изучения.`,
+            `Запрос "${message}" получен. Развиваюсь как AI-ассистент для лучшей помощи!`,
+            `Отличный вопрос! "${message}" - хорошая тема для обсуждения в сообществе.`
           ];
           reply = replies[Math.floor(Math.random() * replies.length)];
         }
 
         // Simulate processing
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 600));
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(200, { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
         res.end(JSON.stringify({
           reply: reply,
           success: true,
@@ -69,7 +83,10 @@ const server = http.createServer(async (req, res) => {
 
       } catch (error) {
         console.error('Error:', error);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.writeHead(500, { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        });
         res.end(JSON.stringify({ error: 'Internal server error' }));
       }
     });
@@ -77,7 +94,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Serve static files
-  let filePath = req.url === '/' ? '/index.html' : req.url;
+  let filePath = pathname === '/' ? '/index.html' : pathname;
   filePath = path.join(__dirname, 'public', filePath);
 
   // Security: prevent directory traversal
@@ -96,7 +113,10 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(404);
             res.end('Not Found');
           } else {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.writeHead(200, { 
+              'Content-Type': 'text/html; charset=utf-8',
+              'Access-Control-Allow-Origin': '*'
+            });
             res.end(data);
           }
         });
@@ -110,9 +130,9 @@ const server = http.createServer(async (req, res) => {
     // Set content type
     const ext = path.extname(filePath);
     const contentTypes = {
-      '.html': 'text/html',
-      '.css': 'text/css',
-      '.js': 'application/javascript',
+      '.html': 'text/html; charset=utf-8',
+      '.css': 'text/css; charset=utf-8',
+      '.js': 'application/javascript; charset=utf-8',
       '.json': 'application/json',
       '.png': 'image/png',
       '.jpg': 'image/jpeg',
@@ -120,7 +140,8 @@ const server = http.createServer(async (req, res) => {
     };
 
     res.writeHead(200, {
-      'Content-Type': contentTypes[ext] || 'text/plain'
+      'Content-Type': contentTypes[ext] || 'text/plain',
+      'Access-Control-Allow-Origin': '*'
     });
     res.end(data);
   });
