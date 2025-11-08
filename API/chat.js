@@ -1,8 +1,8 @@
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -16,24 +16,30 @@ export default async function handler(req, res) {
     const { message } = req.body;
 
     if (!message) {
-      return res.status(400).json({ error: 'Сообщение обязательно' });
+      return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Временная заглушка пока нет лицензии DeepSeek
+    // Заглушка пока нет API ключа DeepSeek
     const replies = [
-      "Привет! Я DeepSeek AI ассистент. В настоящее время настраиваюсь для работы с сообществом.",
-      "Спасибо за ваше сообщение! Скоро я буду полностью функционален.",
-      "ИИ-ассистент в процессе настройки. Возвращайтесь позже!",
-      "Рад общению! В данный момент прохожу финальные настройки."
+      "Привет! Я DeepSeek AI ассистент. Чем могу помочь?",
+      "Отличный вопрос! В настоящее время я настраиваюсь для работы.",
+      "Спасибо за сообщение! Скоро я буду полностью функционален.",
+      "ИИ-ассистент в процессе настройки. Задавайте вопросы!",
+      "Рад общению! Сейчас прохожу финальные настройки."
     ];
     
     const randomReply = replies[Math.floor(Math.random() * replies.length)];
-    const reply = `🤖 ${randomReply}\n\n(Ваше сообщение: "${message}")`;
-
-    return res.status(200).json({ reply });
+    
+    // Имитация задержки сети
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return res.status(200).json({ 
+      reply: `🤖 ${randomReply}`,
+      timestamp: new Date().toISOString()
+    });
 
   } catch (error) {
-    console.error('Ошибка:', error);
-    return res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('API Error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
