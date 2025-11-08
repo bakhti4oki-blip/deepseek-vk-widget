@@ -15,34 +15,53 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Правильно парсим тело запроса для Vercel
     let body;
-    try {
-      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    } catch (parseError) {
-      return res.status(400).json({ error: 'Invalid JSON' });
+    if (typeof req.body === 'string') {
+      body = JSON.parse(req.body);
+    } else if (req.body) {
+      body = req.body;
+    } else {
+      // Для Vercel Serverless Functions
+      const chunks = [];
+      for await (const chunk of req) {
+        chunks.push(chunk);
+      }
+      const rawBody = Buffer.concat(chunks).toString();
+      body = JSON.parse(rawBody);
     }
 
     const { message } = body;
 
-    if (!message || typeof message !== 'string') {
-      return res.status(400).json({ error: 'Message is required and must be a string' });
+    if (!message) {
+      return res.status(400).json({ error: 'Сообщение обязательно' });
     }
 
-    // Упрощенный ответ (заглушка)
-    const replies = [
-      `Привет! Вы написали: "${message}". В настоящее время я настраиваю интеграцию с DeepSeek API.`,
-      `Спасибо за ваше сообщение: "${message}"! Скоро я буду полностью функционален с искусственным интеллектом.`,
-      `Отличный вопрос! "${message}" - это интересно. Я AI-ассистент в процессе настройки.`,
-      `Запрос "${message}" получен. В ближайшее время я буду обрабатывать такие запросы с помощью DeepSeek AI.`
-    ];
-    
-    const randomReply = replies[Math.floor(Math.random() * replies.length)];
-    
+    // Улучшенная заглушка с разными типами ответов
+    const greetings = ['привет', 'здравствуй', 'добрый', 'hello', 'hi', 'начать'];
+    const isGreeting = greetings.some(greet => message.toLowerCase().includes(greet));
+
+    let reply;
+    if (isGreeting) {
+      reply = "🤖 Привет! Я DeepSeek AI ассистент. Задавайте вопросы, и я постараюсь помочь!";
+    } else if (message.length < 3) {
+      reply = "🤖 Пожалуйста, напишите более развернутый вопрос.";
+    } else {
+      const replies = [
+        `Интересный вопрос о "${message}". В настоящее время я настраиваю интеграцию с DeepSeek API.`,
+        `Спасибо за ваш запрос! "${message}" - это важная тема. Скоро я буду полностью функционален.`,
+        `По вопросу "${message}" могу сказать, что как AI-ассистент я еще обучаюсь. Возвращайтесь позже!`,
+        `Запрос "${message}" получен. В ближайшее время я буду обрабатывать такие вопросы с помощью DeepSeek AI.`,
+        `Отличный вопрос! По теме "${message}" скоро смогу давать более точные ответы.`
+      ];
+      reply = "🤖 " + replies[Math.floor(Math.random() * replies.length)];
+    }
+
     // Имитация обработки AI
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
 
     return res.status(200).json({ 
-      reply: `🤖 ${randomReply}`,
+      reply: reply,
       success: true,
       timestamp: new Date().toISOString()
     });
@@ -50,8 +69,8 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
+      error: 'Внутренняя ошибка сервера',
+      message: 'Попробуйте еще раз через несколько секунд'
     });
   }
 }
