@@ -5,8 +5,5 @@
   "scripts": {
     "dev": "vercel dev"
   },
-  "dependencies": {},
-  "engines": {
-    "node": ">=18"
-  }
+  "dependencies": {}
 }
