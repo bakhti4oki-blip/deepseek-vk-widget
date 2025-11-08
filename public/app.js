@@ -3,49 +3,62 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
-    // Инициализация VK Bridge
-    let vkBridge;
-    if (typeof window !== 'undefined' && window.vkBridge) {
-        vkBridge = window.vkBridge;
-        vkBridge.send('VKWebAppInit');
-    }
+    // Определяем базовый URL для API
+    const getBaseUrl = () => {
+        return window.location.origin;
+    };
 
     // Функция добавления сообщения
     function addMessage(text, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = isUser ? 'message user' : 'message bot';
-        messageDiv.textContent = text;
+        
+        const textNode = document.createTextNode(text);
+        messageDiv.appendChild(textNode);
+        
         messages.appendChild(messageDiv);
         messages.scrollTop = messages.scrollHeight;
     }
 
     // Приветственное сообщение
-    addMessage('🤖 Привет! Я DeepSeek AI ассистент. Чем могу помочь?');
+    addMessage('🤖 Привет! Я DeepSeek AI ассистент. Задавайте вопросы, и я постараюсь помочь!');
 
     // Функция для отправки сообщения на сервер
     async function sendMessageToServer(userMessage) {
         try {
-            const response = await fetch('/api/chat', {
+            const response = await fetch(getBaseUrl() + '/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    message: userMessage,
-                    platform: 'vk' 
+                    message: userMessage
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
 
             const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
             return data.reply || '🤖 Извините, не удалось обработать запрос';
 
         } catch (error) {
             console.error('Network error:', error);
-            throw new Error('Ошибка соединения с сервером');
+            
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Не удалось соединиться с сервером. Проверьте подключение к интернету.');
+            } else if (error.message.includes('HTTP 5')) {
+                throw new Error('Временные проблемы с сервером. Попробуйте позже.');
+            } else {
+                throw new Error('Ошибка соединения: ' + error.message);
+            }
         }
     }
 
@@ -60,11 +73,12 @@ document.addEventListener('DOMContentLoaded', function() {
         addMessage(userMessage, true);
         input.value = '';
         input.disabled = true;
+        form.querySelector('button').disabled = true;
 
         // Индикатор загрузки
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message bot loading';
-        loadingDiv.textContent = 'DeepSeek думает...';
+        loadingDiv.textContent = '⏳ DeepSeek думает...';
         loadingDiv.id = 'loading-message';
         messages.appendChild(loadingDiv);
         messages.scrollTop = messages.scrollHeight;
@@ -89,35 +103,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingElement.remove();
             }
             
-            addMessage('🤖 ' + error.message);
+            addMessage('❌ ' + error.message);
         } finally {
             input.disabled = false;
+            form.querySelector('button').disabled = false;
             input.focus();
         }
     });
 
-    // Адаптация под мобильные устройства VK
-    function adjustForMobile() {
+    // Адаптация под разные устройства
+    function adjustLayout() {
         const app = document.getElementById('app');
-        if (window.innerWidth <= 768) {
-            app.style.maxWidth = '100%';
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+            app.style.width = '100%';
             app.style.height = '100vh';
             app.style.borderRadius = '0';
+        } else {
+            app.style.width = '380px';
+            app.style.height = '600px';
+            app.style.borderRadius = '12px';
         }
     }
 
     // Инициализация
     window.addEventListener('load', function() {
-        adjustForMobile();
+        adjustLayout();
         input.focus();
-        
-        // Для VK Mini Apps - отправляем событие инициализации
-        if (vkBridge) {
-            vkBridge.send('VKWebAppUpdateConfig', {
-                height: document.documentElement.scrollHeight
-            });
-        }
     });
 
-    window.addEventListener('resize', adjustForMobile);
+    window.addEventListener('resize', adjustLayout);
 });
