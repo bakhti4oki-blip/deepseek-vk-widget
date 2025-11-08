@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
-    // Функция добавления сообщения
     function addMessage(text, isUser = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = isUser ? 'message user' : 'message bot';
@@ -12,90 +11,65 @@ document.addEventListener('DOMContentLoaded', function() {
         messages.scrollTop = messages.scrollHeight;
     }
 
-    // Приветственное сообщение
-    addMessage('🤖 Привет! Я DeepSeek AI ассистент. Задавайте вопросы, и я постараюсь помочь!');
+    // Welcome message
+    addMessage('🤖 Привет! Я DeepSeek AI ассистент. Напишите мне сообщение!');
 
-    // Функция для отправки сообщения на сервер
-    async function sendMessageToServer(userMessage) {
+    async function sendMessage(userMessage) {
         try {
-            console.log('Отправка сообщения на сервер:', userMessage);
-            
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    message: userMessage
-                })
+                body: JSON.stringify({ message: userMessage })
             });
 
-            console.log('Статус ответа:', response.status);
-
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('Данные ответа:', data);
-            
-            return data.reply || '🤖 Извините, не удалось обработать запрос';
+            return data.reply;
 
         } catch (error) {
-            console.error('Ошибка сети:', error);
+            console.error('Error:', error);
             
-            if (error.message.includes('Failed to fetch')) {
-                throw new Error('Не удалось соединиться с сервером. Проверьте подключение к интернету.');
-            } else if (error.message.includes('HTTP 404')) {
-                throw new Error('Сервер временно недоступен. Пожалуйста, попробуйте позже.');
-            } else if (error.message.includes('HTTP 5')) {
-                throw new Error('Временные проблемы с сервером. Попробуйте через минуту.');
+            if (error.message.includes('404')) {
+                throw new Error('Сервер временно недоступен. Обновите страницу.');
+            } else if (error.message.includes('Failed to fetch')) {
+                throw new Error('Проблемы с интернет-соединением.');
             } else {
-                throw new Error('Ошибка соединения: ' + error.message);
+                throw new Error('Ошибка: ' + error.message);
             }
         }
     }
 
-    // Обработчик формы
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         const userMessage = input.value.trim();
         if (!userMessage) return;
 
-        // Добавляем сообщение пользователя
+        // Add user message
         addMessage(userMessage, true);
         input.value = '';
         input.disabled = true;
 
-        // Индикатор загрузки
+        // Loading indicator
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message bot loading';
-        loadingDiv.textContent = '⏳ DeepSeek думает...';
+        loadingDiv.textContent = '⏳ Thinking...';
         loadingDiv.id = 'loading-message';
         messages.appendChild(loadingDiv);
         messages.scrollTop = messages.scrollHeight;
 
         try {
-            const reply = await sendMessageToServer(userMessage);
-            
-            // Убираем индикатор загрузки
-            const loadingElement = document.getElementById('loading-message');
-            if (loadingElement) {
-                loadingElement.remove();
-            }
-            
+            const reply = await sendMessage(userMessage);
+            document.getElementById('loading-message').remove();
             addMessage(reply);
 
         } catch (error) {
-            console.error('Ошибка:', error);
-            
-            // Убираем индикатор загрузки
-            const loadingElement = document.getElementById('loading-message');
-            if (loadingElement) {
-                loadingElement.remove();
-            }
-            
+            document.getElementById('loading-message').remove();
             addMessage('❌ ' + error.message);
         } finally {
             input.disabled = false;
@@ -103,6 +77,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Фокус на поле ввода при загрузке
+    // Focus input
     input.focus();
 });
