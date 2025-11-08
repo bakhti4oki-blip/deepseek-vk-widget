@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function sendMessage(userMessage) {
         try {
+            console.log('Sending message:', userMessage);
+            
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
@@ -23,6 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ message: userMessage })
             });
+
+            console.log('Response status:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -32,10 +36,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return data.reply;
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Network error:', error);
             
             if (error.message.includes('404')) {
-                throw new Error('Сервер временно недоступен. Обновите страницу.');
+                throw new Error('Сервер временно недоступен. Попробуйте обновить страницу.');
             } else if (error.message.includes('Failed to fetch')) {
                 throw new Error('Проблемы с интернет-соединением.');
             } else {
@@ -58,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Loading indicator
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message bot loading';
-        loadingDiv.textContent = '⏳ Thinking...';
+        loadingDiv.textContent = '⏳ Думаю...';
         loadingDiv.id = 'loading-message';
         messages.appendChild(loadingDiv);
         messages.scrollTop = messages.scrollHeight;
