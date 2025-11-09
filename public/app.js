@@ -17,10 +17,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Функция добавления сообщения
-    function addMessage(text, isUser = false) {
+    function addMessage(text, isUser = false, source = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = isUser ? 'message user' : 'message bot';
-        messageDiv.textContent = text;
+        
+        // Добавляем индикатор источника, если есть
+        if (source && !isUser) {
+            const sourceIndicator = document.createElement('div');
+            sourceIndicator.className = 'source-indicator';
+            sourceIndicator.textContent = source === 'deepseek-api' ? '🤖 DeepSeek AI' : '💡 Локальный ответ';
+            messageDiv.appendChild(sourceIndicator);
+        }
+        
+        const textNode = document.createTextNode(text);
+        messageDiv.appendChild(textNode);
         messages.appendChild(messageDiv);
         messages.scrollTop = messages.scrollHeight;
     }
@@ -44,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const data = await response.json();
-            return data.reply;
+            return data;
 
         } catch (error) {
             console.error('Network error:', error);
@@ -80,9 +90,9 @@ document.addEventListener('DOMContentLoaded', function() {
         messages.scrollTop = messages.scrollHeight;
 
         try {
-            const reply = await sendMessage(userMessage);
+            const data = await sendMessage(userMessage);
             loadingDiv.remove();
-            addMessage(reply);
+            addMessage(data.reply, false, data.source);
 
         } catch (error) {
             loadingDiv.remove();
