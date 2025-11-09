@@ -9,13 +9,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof vkBridge !== 'undefined') {
         isVK = true;
         try {
-            vkBridge.send('VKWebAppInit').then(() => {
-                console.log('VK Mini App initialized');
-            }).catch(err => {
-                console.log('VK Bridge not available');
-            });
+            vkBridge.send('VKWebAppInit');
+            console.log('VK Mini App initialized');
         } catch (e) {
-            console.log('VK Bridge error:', e);
+            console.log('VK Bridge not available');
         }
     }
 
@@ -34,8 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Функция отправки сообщения
     async function sendMessage(userMessage) {
         try {
-            console.log('Sending message:', userMessage);
-            
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
@@ -44,30 +39,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ message: userMessage })
             });
 
-            console.log('Response status:', response.status);
-
             if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
+                throw new Error(`HTTP ${response.status}`);
             }
 
             const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
             return data.reply;
 
         } catch (error) {
             console.error('Network error:', error);
             
-            if (error.message.includes('Failed to fetch')) {
+            if (error.message.includes('404')) {
+                throw new Error('Сервер временно недоступен');
+            } else if (error.message.includes('Failed to fetch')) {
                 throw new Error('Проблемы с интернет-соединением');
-            } else if (error.message.includes('HTTP 5')) {
-                throw new Error('Временная ошибка сервера');
             } else {
-                throw new Error('Ошибка: ' + error.message);
+                throw new Error('Ошибка сервера');
             }
         }
     }
@@ -94,13 +81,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const reply = await sendMessage(userMessage);
-            
-            // Убираем индикатор загрузки
             loadingDiv.remove();
             addMessage(reply);
 
         } catch (error) {
-            // Убираем индикатор загрузки
             loadingDiv.remove();
             addMessage('Ошибка: ' + error.message);
         } finally {
@@ -116,14 +100,5 @@ document.addEventListener('DOMContentLoaded', function() {
     // Адаптация для VK
     if (isVK) {
         document.body.classList.add('vk-app');
-        // Обновляем высоту для VK
-        if (typeof vkBridge !== 'undefined') {
-            setTimeout(() => {
-                vkBridge.send('VKWebAppSetViewSettings', {
-                    status_bar_style: 'light',
-                    action_bar_color: '#000000'
-                });
-            }, 1000);
-        }
     }
 });
