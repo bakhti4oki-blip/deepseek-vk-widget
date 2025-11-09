@@ -78,6 +78,7 @@ header p {
     font-size: 14px;
     animation: fadeIn 0.3s ease;
     line-height: 1.4;
+    position: relative;
 }
 
 @keyframes fadeIn {
@@ -104,6 +105,14 @@ header p {
     color: #888888;
     font-style: italic;
     border: 1px solid #333333;
+}
+
+/* Индикатор источника ответа */
+.source-indicator {
+    font-size: 10px;
+    color: #888888;
+    margin-bottom: 5px;
+    font-style: italic;
 }
 
 #form {
@@ -173,4 +182,25 @@ button:disabled {
 
 #messages::-webkit-scrollbar-thumb:hover {
     background: #444444;
+}
+
+/* Статус подключения */
+.status-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    z-index: 1000;
+}
+
+.status-connected {
+    background: #00aa00;
+    color: white;
+}
+
+.status-local {
+    background: #aa5500;
+    color: white;
 }
