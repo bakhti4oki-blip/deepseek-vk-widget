@@ -21,22 +21,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageDiv = document.createElement('div');
         messageDiv.className = isUser ? 'message user' : 'message bot';
         
-        // Добавляем индикатор источника, если есть
+        const textContent = document.createElement('div');
+        textContent.className = 'message-text';
+        textContent.textContent = text;
+        messageDiv.appendChild(textContent);
+        
+        // Добавляем индикатор источника только для AI ответов
         if (source && !isUser) {
             const sourceIndicator = document.createElement('div');
             sourceIndicator.className = 'source-indicator';
-            sourceIndicator.textContent = source === 'deepseek-api' ? '🤖 DeepSeek AI' : '💡 Локальный ответ';
+            if (source === 'deepseek-api') {
+                sourceIndicator.innerHTML = '🤖 <strong>DeepSeek AI</strong>';
+            } else {
+                sourceIndicator.innerHTML = '💡 <strong>Локальная база знаний</strong>';
+            }
             messageDiv.appendChild(sourceIndicator);
         }
         
-        const textNode = document.createTextNode(text);
-        messageDiv.appendChild(textNode);
         messages.appendChild(messageDiv);
         messages.scrollTop = messages.scrollHeight;
     }
 
     // Приветственное сообщение
-    addMessage('Привет! Я DeepSeek AI ассистент для сообщества о вахтовой работе в Уфе и Башкирии.');
+    addMessage('Привет! Я AI-ассистент для сообщества о вахтовой работе в Уфе и Башкирии. Задавайте вопросы о вакансиях, условиях труда, зарплате и требованиях.');
 
     // Функция отправки сообщения
     async function sendMessage(userMessage) {
@@ -85,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Индикатор загрузки
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message bot loading';
-        loadingDiv.textContent = 'Думаю...';
+        loadingDiv.textContent = 'Ищу информацию...';
         messages.appendChild(loadingDiv);
         messages.scrollTop = messages.scrollHeight;
 
@@ -96,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             loadingDiv.remove();
-            addMessage('Ошибка: ' + error.message);
+            addMessage('❌ ' + error.message);
         } finally {
             input.disabled = false;
             button.disabled = false;
