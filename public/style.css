@@ -13,7 +13,7 @@ body {
     justify-content: center;
     align-items: center;
     color: #ffffff;
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
 body.vk-app {
@@ -30,7 +30,6 @@ body.vk-app {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid #333333;
 }
 
 /* Для VK и мобильных */
@@ -38,7 +37,6 @@ body.vk-app {
     #app {
         max-width: 100%;
         max-height: 100vh;
-        border: none;
     }
 }
 
@@ -73,13 +71,13 @@ header p {
 }
 
 .message {
-    padding: 0;
+    padding: 12px 16px;
     border-radius: 12px;
-    max-width: 90%;
+    max-width: 85%;
     word-wrap: break-word;
     font-size: 14px;
     animation: fadeIn 0.3s ease;
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
 @keyframes fadeIn {
@@ -102,18 +100,13 @@ header p {
 }
 
 .message-text {
-    padding: 16px;
     white-space: pre-line;
-    font-size: 14px;
-    line-height: 1.5;
 }
 
-/* Улучшенное форматирование для бота */
 .message.bot .message-text {
     color: #e0e0e0;
 }
 
-/* Жирный текст в сообщениях бота */
 .message.bot .message-text strong {
     color: #ffffff;
     font-weight: 600;
@@ -124,22 +117,14 @@ header p {
     color: #888888;
     font-style: italic;
     border: 1px solid #333333;
-    padding: 12px 16px;
 }
 
-/* Индикатор источника */
 .source-indicator {
     font-size: 10px;
     color: #888888;
-    padding: 8px 12px;
-    background: #252525;
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px solid #333333;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-}
-
-.source-indicator strong {
-    color: #aaaaaa;
 }
 
 #form {
@@ -210,63 +195,4 @@ button:disabled {
 
 #messages::-webkit-scrollbar-thumb:hover {
     background: #444444;
-}
-
-/* Анимация для новых сообщений */
-.message:last-child {
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Быстрые кнопки */
-.quick-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-    margin-bottom: 16px;
-}
-
-.quick-button {
-    background: #2a2a2a;
-    border: 1px solid #444444;
-    border-radius: 16px;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: #cccccc;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.quick-button:hover {
-    background: #3a3a3a;
-    transform: translateY(-1px);
-}
-
-/* Улучшаем читаемость списков */
-.message.bot .message-text {
-    font-size: 14px;
-}
-
-.message.bot .message-text strong {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 15px;
-}
-
-/* Эмодзи в сообщениях */
-.message.bot .message-text {
-    font-size: 14px;
-    line-height: 1.5;
 }
