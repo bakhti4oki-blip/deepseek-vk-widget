@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const textContent = document.createElement('div');
         textContent.className = 'message-text';
-        textContent.textContent = text;
+        textContent.innerHTML = formatMessage(text); // Используем innerHTML для форматирования
         messageDiv.appendChild(textContent);
         
         // Добавляем индикатор источника только для AI ответов
@@ -42,11 +42,22 @@ document.addEventListener('DOMContentLoaded', function() {
         messages.scrollTop = messages.scrollHeight;
     }
 
-    // Приветственное сообщение
-    addMessage('Привет! Я AI-ассистент сообщества «Уфа Работа Вахта Башкирия». Помогаю с информацией по вакансии изолировщика промышленного трубопровода.');
+    // Функция форматирования сообщения (жирный текст, эмодзи)
+    function formatMessage(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **текст** в жирный
+            .replace(/\n/g, '<br>') // Переносы строк
+            .replace(/•/g, '•'); // Сохраняем буллеты
+    }
 
-    // Информация о сообществе
-    addMessage('🏢 Сообщество «Уфа Работа Вахта Башкирия»\n\n💬 По всем вопросам трудоустройства пишите в наше сообщество!\n🚀 Скоро: реальный AI на базе DeepSeek');
+    // Приветственное сообщение
+    setTimeout(() => {
+        addMessage('👋 Привет! Рад вас видеть!\n\nЯ помощник сообщества «Уфа Работа Вахта Башкирия».');
+        
+        setTimeout(() => {
+            addMessage('У нас есть интересная вакансия — **изолировщик промышленного трубопровода**. Это работа с обучением с нуля!\n\nЧто бы вы хотели узнать? Например:\n• 🏢 Условия работы и зарплата\n• 📅 График вахты  \n• 📋 Требования к кандидатам\n• 🎓 Обучение с нуля\n• 📄 Документы для трудоустройства\n\nВыбирайте — расскажу подробнее! 😊');
+        }, 800);
+    }, 500);
 
     // Функция отправки сообщения
     async function sendMessage(userMessage) {
@@ -95,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Индикатор загрузки
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'message bot loading';
-        loadingDiv.textContent = 'Ищу информацию...';
+        loadingDiv.textContent = 'Думаю...';
         messages.appendChild(loadingDiv);
         messages.scrollTop = messages.scrollHeight;
 
@@ -113,6 +124,36 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => input.focus(), 100);
         }
     });
+
+    // Быстрые кнопки для частых вопросов
+    function addQuickButtons() {
+        const quickButtons = [
+            'Условия работы',
+            'Зарплата',
+            'График вахты',
+            'Обучение с нуля',
+            'Контакты'
+        ];
+
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'quick-buttons';
+        
+        quickButtons.forEach(text => {
+            const button = document.createElement('button');
+            button.className = 'quick-button';
+            button.textContent = text;
+            button.addEventListener('click', () => {
+                input.value = text;
+                form.dispatchEvent(new Event('submit'));
+            });
+            buttonsContainer.appendChild(button);
+        });
+
+        messages.appendChild(buttonsContainer);
+    }
+
+    // Добавляем быстрые кнопки после загрузки
+    setTimeout(addQuickButtons, 2000);
 
     // Фокус на поле ввода
     input.focus();
