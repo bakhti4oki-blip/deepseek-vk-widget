@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const textContent = document.createElement('div');
         textContent.className = 'message-text';
-        textContent.innerHTML = formatMessage(text); // Используем innerHTML для форматирования
+        textContent.innerHTML = formatMessage(text);
         messageDiv.appendChild(textContent);
         
         // Добавляем индикатор источника только для AI ответов
@@ -31,9 +31,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const sourceIndicator = document.createElement('div');
             sourceIndicator.className = 'source-indicator';
             if (source === 'deepseek-api') {
-                sourceIndicator.innerHTML = '🤖 <strong>DeepSeek AI</strong>';
+                sourceIndicator.innerHTML = '🤖 AI';
             } else {
-                sourceIndicator.innerHTML = '💡 <strong>Локальная база знаний</strong>';
+                sourceIndicator.innerHTML = '💡 База знаний';
             }
             messageDiv.appendChild(sourceIndicator);
         }
@@ -42,21 +42,17 @@ document.addEventListener('DOMContentLoaded', function() {
         messages.scrollTop = messages.scrollHeight;
     }
 
-    // Функция форматирования сообщения (жирный текст, эмодзи)
+    // Функция форматирования сообщения
     function formatMessage(text) {
         return text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **текст** в жирный
-            .replace(/\n/g, '<br>') // Переносы строк
-            .replace(/•/g, '•'); // Сохраняем буллеты
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>')
+            .replace(/•/g, '•');
     }
 
-    // Приветственное сообщение
+    // Приветственное сообщение (одно, без лишней информации)
     setTimeout(() => {
-        addMessage('👋 Привет! Рад вас видеть!\n\nЯ помощник сообщества «Уфа Работа Вахта Башкирия».');
-        
-        setTimeout(() => {
-            addMessage('У нас есть интересная вакансия — **изолировщик промышленного трубопровода**. Это работа с обучением с нуля!\n\nЧто бы вы хотели узнать? Например:\n• 🏢 Условия работы и зарплата\n• 📅 График вахты  \n• 📋 Требования к кандидатам\n• 🎓 Обучение с нуля\n• 📄 Документы для трудоустройства\n\nВыбирайте — расскажу подробнее! 😊');
-        }, 800);
+        addMessage('Привет! 👋 Я помощник сообщества «Уфа Работа Вахта Башкирия». У нас есть вакансия изолировщика с обучением с нуля. Чем могу помочь?');
     }, 500);
 
     // Функция отправки сообщения
@@ -125,36 +121,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Быстрые кнопки для частых вопросов
-    function addQuickButtons() {
-        const quickButtons = [
-            'Условия работы',
-            'Зарплата',
-            'График вахты',
-            'Обучение с нуля',
-            'Контакты'
-        ];
-
-        const buttonsContainer = document.createElement('div');
-        buttonsContainer.className = 'quick-buttons';
-        
-        quickButtons.forEach(text => {
-            const button = document.createElement('button');
-            button.className = 'quick-button';
-            button.textContent = text;
-            button.addEventListener('click', () => {
-                input.value = text;
-                form.dispatchEvent(new Event('submit'));
-            });
-            buttonsContainer.appendChild(button);
-        });
-
-        messages.appendChild(buttonsContainer);
-    }
-
-    // Добавляем быстрые кнопки после загрузки
-    setTimeout(addQuickButtons, 2000);
-
     // Фокус на поле ввода
     input.focus();
 
@@ -162,4 +128,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isVK) {
         document.body.classList.add('vk-app');
     }
+
+    // Обработка ссылок ВКонтакте
+    document.addEventListener('click', function(e) {
+        if (e.target.tagName === 'A' && e.target.href) {
+            if (isVK && typeof vkBridge !== 'undefined') {
+                e.preventDefault();
+                vkBridge.send('VKWebAppOpenURL', { url: e.target.href });
+            }
+        }
+    });
 });
